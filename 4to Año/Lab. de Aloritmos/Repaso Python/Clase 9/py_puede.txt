@@ -1,0 +1,4 @@
+En Python podes crear variables facilmente.
+En Python podes trabajar con listas y diccionarios.
+En Python podes definir funciones para reutilizar codigo.
+En Python podes leer y escribir archivos.

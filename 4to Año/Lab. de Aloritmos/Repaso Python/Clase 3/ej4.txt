@@ -1,0 +1,8 @@
+Explicación facil:
+El comportamiento se debe a la forma en que los números decimales se representan internamente en los ordenadores. Los números en punto flotante, como 0.2 o 0.1, no se pueden representar de forma exacta en binario debido a las limitaciones de la precisión de los cálculos en los sistemas informáticos. Esto es común en muchos lenguajes de programación, no solo en Python.
+
+Explicación técnica:
+En la computadora, los números en punto flotante se almacenan en una forma binaria, y algunos valores decimales, como 0.1 o 0.2, no pueden ser representados de manera exacta en binario. Por ejemplo, 0.1 en decimal tiene una expansión binaria infinita que no puede ser representada con una cantidad finita de bits. El sistema utiliza una aproximación, pero a veces esta pequeña diferencia puede llevar a resultados inesperados en operaciones aritméticas, como en el caso de la suma o multiplicación que mencionas. Por eso, cuando haces 0.2 + 0.1 o 3 * 0.1, obtienes un valor como 0.30000000000000004 en lugar de exactamente 0.3.
+
+Soluciones y alternativas:
+Si necesitas realizar cálculos con precisión exacta en lugar de aproximaciones, puedes usar el módulo decimal de Python, que está diseñado para proporcionar una mayor precisión en los cálculos con números decimales.
