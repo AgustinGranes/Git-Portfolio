@@ -1,0 +1,14 @@
+Bitacora sobre la realizacion del proyecto y el avance realizado dia a dia:
+Dia 1: Empiezo a hacer una revision de contenidos y formas de uso del modulo "Pygame" con el cual realize el codigo. Mediante tutoriales de YouTube, empiezo a adoptar los contenidos e informacion basica que componen el modulo, asi como sus formas de uso.
+
+Dia 2: Termino de ver los tutoriales y empiezo a practicar (En un archvio separado, en forma de borrador) los conceptos adoptados durante la realizacion del curso.
+
+Dia 3: Realizo una investigacion completa sobre el juego a replicar, buscando videos "Gameplay" e incluso comienzo a buscar ejemplos de este juego en GitHub, buscando tutoriales en YouTube, Preguntando a la inteligencia artificial, etc.
+
+Dia 4: Comienzo el desarollo del juego, empezando por las partes basicas como la busqueda de recursos, definicion de variables, constantes, funciones, objetos, etc.
+
+Dia 5: Continuo con el desarollo, la primer parte principalmente (Que es basicamente, el juego en si), llegando a definir la jugabilidad casi al completo.
+
+Dia 6: Termino de hacer la parte del juego y comienzo a hacer un menu. El menu tiene: Contadores, opciones, botones de salir, imagenes, etc.
+
+Dia 7: Termino el menu y finalizo la programacion del codigo, agregando opciones extra como mejoras de la tipografia, optimizando el codigo, agregando comentarios al mismo, corregir errores, etc.
