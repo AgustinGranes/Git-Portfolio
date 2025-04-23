@@ -7,7 +7,7 @@ Este espacio reúne el contenido educativo que refleja mi proceso de aprendizaje
 # Sobre mí
 ### Nombre: Agustín Granes
 
-### Ubicación: Buenos Aires, Argentina
+### Ubicación: ### Buenos Aires, Argentina
 
 ### Intereses: Tecnología, programación y aprendizaje continuo.
 
