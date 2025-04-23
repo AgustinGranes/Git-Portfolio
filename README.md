@@ -5,11 +5,11 @@
 Este espacio reúne el contenido educativo que refleja mi proceso de aprendizaje desde el inicio del ciclo superior, momento en el cual comencé la carrera de Técnico en Computación. Cada proyecto y ejercicio compartido aquí es un testimonio de mi evolución académica y personal, demostrando las competencias adquiridas y aplicadas a lo largo del tiempo.
 
 # Sobre mí
-### Nombre: Agustín Granes
+### **Nombre:** Agustín Granes
 
-### Ubicación: ### Buenos Aires, Argentina
+### **Ubicación:** Buenos Aires, Argentina
 
-### Intereses: Tecnología, programación y aprendizaje continuo.
+### **Intereses:** Tecnología, programación y aprendizaje continuo.
 
 # Estructura del repositorio
 Este repositorio está organizado por años y materias, con el fin de facilitar la navegación y explorar los diferentes temas que forman parte de mi trayectoria educativa.
