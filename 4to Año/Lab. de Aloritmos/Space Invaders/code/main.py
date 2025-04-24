@@ -298,15 +298,16 @@ class Juego:
         self.tiempo_aparicion_extra = randint(40, 80)
 
         # Audio
+        pygame.mixer.init()  # Inicializar el sistema de audio
         self.musica = pygame.mixer.Sound('audio/music.wav')
-        self.musica.set_volume(niveles_volumen["musica"])
-        self.musica.play(loops=-1)
-        
         self.sonido_laser = pygame.mixer.Sound('audio/laser.wav')
-        self.sonido_laser.set_volume(niveles_volumen["efectos"])
-        
         self.sonido_explosion = pygame.mixer.Sound('audio/explosion.wav')
+        
+        # Aplicar volúmenes iniciales
+        self.musica.set_volume(niveles_volumen["musica"])
+        self.sonido_laser.set_volume(niveles_volumen["efectos"])
         self.sonido_explosion.set_volume(niveles_volumen["efectos"])
+        self.musica.play(loops=-1)
 
     def crear_obstaculo(self, x_inicio, y_inicio, offset_x):
         for indice_fila, fila in enumerate(self.forma):
