@@ -6,7 +6,14 @@ import obstacle
 from alien import Alien, Extra
 from random import choice, randint
 from laser import Laser
-pygame.font.init()
+
+# Obtener el directorio actual del script
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+
+def get_resource_path(filename):
+    """Obtiene la ruta completa de un archivo de recursos"""
+    return os.path.join(PARENT_DIR, filename)
 
 # Aumentar el tamaño de la pantalla
 ancho_pantalla = 800
@@ -27,20 +34,23 @@ niveles_volumen = {
 
 # Cargar/crear archivo de puntuaciones
 def cargar_puntuacion_maxima():
-    if os.path.exists('puntuacion_maxima.json'):
+    archivo_puntuacion = get_resource_path('highscore.json')
+    if os.path.exists(archivo_puntuacion):
         try:
-            with open('puntuacion_maxima.json', 'r') as archivo:
+            with open(archivo_puntuacion, 'r') as archivo:
                 datos = json.load(archivo)
                 return datos.get('puntuacion_maxima', 0)
         except:
             return 0
-    else:
-        guardar_puntuacion_maxima(0)
-        return 0
+    return 0
 
 def guardar_puntuacion_maxima(puntuacion):
-    with open('puntuacion_maxima.json', 'w') as archivo:
-        json.dump({'puntuacion_maxima': puntuacion}, archivo)
+    archivo_puntuacion = get_resource_path('highscore.json')
+    try:
+        with open(archivo_puntuacion, 'w') as archivo:
+            json.dump({'puntuacion_maxima': puntuacion}, archivo)
+    except Exception as e:
+        print(f"Error al guardar puntuación: {e}")
 
 class Boton:
     def __init__(self, texto, ancho, alto, pos, fuente):
@@ -50,25 +60,29 @@ class Boton:
         self.pos = pos
         self.fuente = fuente
         self.rect = pygame.Rect(pos[0], pos[1], ancho, alto)
+        self.click = False
         
     def dibujar(self, pantalla):
         pos_raton = pygame.mouse.get_pos()
-        hover = self.rect.collidepoint(pos_raton)
+        self.hover = self.rect.collidepoint(pos_raton)
         
         # Colores según estado
-        color_boton = BLANCO if hover else NEGRO
-        color_texto = NEGRO if hover else BLANCO
+        color_boton = (200, 200, 200) if self.hover else (100, 100, 100)
+        color_texto = (0, 0, 0) if self.hover else (255, 255, 255)
         
+        # Dibujar el botón con borde
         pygame.draw.rect(pantalla, color_boton, self.rect)
+        pygame.draw.rect(pantalla, (255, 255, 255), self.rect, 2)  # Borde blanco
         
         # Centrar texto en el botón
         superficie_texto = self.fuente.render(self.texto, True, color_texto)
-        ancho_texto, alto_texto = superficie_texto.get_size()
+        ancho_texto = superficie_texto.get_width()
+        alto_texto = superficie_texto.get_height()
         x_texto = self.pos[0] + (self.ancho - ancho_texto) // 2
         y_texto = self.pos[1] + (self.alto - alto_texto) // 2
         pantalla.blit(superficie_texto, (x_texto, y_texto))
         
-        return hover
+        return self.hover
 
 def mostrar_menu():
     pantalla.fill(GRIS_OSCURO)
@@ -76,7 +90,7 @@ def mostrar_menu():
     
     # Cargar y mostrar el logo
     try:
-        logo = pygame.image.load('graphics/logo.png').convert_alpha()
+        logo = pygame.image.load(r'Personal\Space Invaders (Juego - 2025)\graphics\logo.png').convert_alpha()
         # Ajustar tamaño si es necesario (opcional)
         ancho_logo = min(400, ancho_pantalla * 0.7)  # Limitar el ancho máximo
         alto_logo = ancho_logo * (logo.get_height() / logo.get_width())  # Mantener proporción
@@ -273,11 +287,11 @@ class Juego:
 
         # Configuración de vidas y puntuación
         self.vidas = 3
-        self.superficie_vida = pygame.image.load('graphics/player.png').convert_alpha()
+        self.superficie_vida = pygame.image.load(get_resource_path('graphics/player.png')).convert_alpha()
         self.pos_x_inicial_vida = ancho_pantalla - (self.superficie_vida.get_size()[0] * 2 + 20)
         self.puntuacion = 0
         self.puntuacion_maxima = cargar_puntuacion_maxima()
-        self.fuente = pygame.font.Font('font/Pixeled.ttf', 20)
+        self.fuente = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 20)
 
         # Configuración de obstáculos
         self.forma = obstacle.shape
@@ -299,9 +313,9 @@ class Juego:
 
         # Audio
         pygame.mixer.init()  # Inicializar el sistema de audio
-        self.musica = pygame.mixer.Sound('audio/music.wav')
-        self.sonido_laser = pygame.mixer.Sound('audio/laser.wav')
-        self.sonido_explosion = pygame.mixer.Sound('audio/explosion.wav')
+        self.musica = pygame.mixer.Sound(get_resource_path('audio/music.wav'))
+        self.sonido_laser = pygame.mixer.Sound(get_resource_path('audio/laser.wav'))
+        self.sonido_explosion = pygame.mixer.Sound(get_resource_path('audio/explosion.wav'))
         
         # Aplicar volúmenes iniciales
         self.musica.set_volume(niveles_volumen["musica"])
@@ -451,18 +465,31 @@ class Juego:
                     # Detener la música cuando hay colisión con alien
                     self.musica.stop()
     
-    def mostrar_game_over(self, pantalla):
-        # Asegurarnos de que la música esté detenida
+    def detener_todos_sonidos(self):
+        # Detener todos los sonidos del juego
         self.musica.stop()
+        self.sonido_laser.stop()
+        self.sonido_explosion.stop()
+        # Limpiar grupos de sprites para evitar disparos posteriores
+        self.lasers_aliens.empty()
+        if self.jugador:
+            self.jugador.sprite.lasers.empty()
+        if self.jugador2:
+            self.jugador2.sprite.lasers.empty()
+
+    def mostrar_game_over(self, pantalla):
+        # Detener todos los sonidos
+        self.detener_todos_sonidos()
         
-        # Actualizar puntuación máxima si es necesario
+        # Actualizar puntuacion maxima si es necesario
         if self.puntuacion > self.puntuacion_maxima:
             guardar_puntuacion_maxima(self.puntuacion)
             self.puntuacion_maxima = self.puntuacion
             
-        # Crear un rectángulo semitransparente para oscurecer el fondo
-        s = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
-        s.fill((0, 0, 0, 180))  # Semitransparente
+        # Crear un rectangulo semitransparente para oscurecer el fondo
+        s = pygame.Surface((ancho_pantalla, alto_pantalla))
+        s.set_alpha(180)
+        s.fill((0, 0, 0))
         pantalla.blit(s, (0, 0))
         
         # Mostrar texto de Game Over
@@ -470,33 +497,85 @@ class Juego:
         rect_game_over = texto_game_over.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
         pantalla.blit(texto_game_over, rect_game_over)
         
-        # Mostrar puntuación final
-        texto_puntuacion = fuente.render(f'Puntuación: {self.puntuacion}', True, BLANCO)
+        # Mostrar puntuacion final
+        texto_puntuacion = fuente.render(f'Puntuacion: {self.puntuacion}', True, BLANCO)
         rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
         pantalla.blit(texto_puntuacion, rect_puntuacion)
         
-        # Mostrar mensaje si se batió récord
+        # Mostrar mensaje si se batio record
         if self.puntuacion >= self.puntuacion_maxima:
-            texto_record = fuente.render('¡Nueva puntuación máxima!', True, VERDE)
+            texto_record = fuente.render('Nueva puntuacion maxima!', True, VERDE)
             rect_record = texto_record.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 + 40))
             pantalla.blit(texto_record, rect_record)
+
+        # Boton para volver al menu
+        boton_menu = Boton("Volver al Menu", 250, 50, ((ancho_pantalla - 250)//2, alto_pantalla//2 + 100), fuente)
+        boton_menu.dibujar(pantalla)
         
-        # Botón para volver al menú
-        boton_menu = Boton("Volver al Menú", 250, 50, ((ancho_pantalla - 250)//2, alto_pantalla//2 + 100), fuente)
-        hover = boton_menu.dibujar(pantalla)
-        
-        # Verificar clic en botón
+        # Verificar clic en boton
         pos_raton = pygame.mouse.get_pos()
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif evento.type == pygame.MOUSEBUTTONDOWN:
+            elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Solo clic izquierdo
                 if boton_menu.rect.collidepoint(pos_raton):
                     return True
         
         return False
-    
+
+    def mostrar_victoria(self, pantalla):
+        if not self.aliens.sprites():
+            # Detener todos los sonidos
+            self.detener_todos_sonidos()
+            
+            # Verificar si ya estamos en pantalla de victoria
+            if not self.victoria_active:
+                self.victoria_active = True
+            
+            # Actualizar puntuacion maxima si es necesario
+            if self.puntuacion > self.puntuacion_maxima:
+                guardar_puntuacion_maxima(self.puntuacion)
+                self.puntuacion_maxima = self.puntuacion
+            
+            # Crear un rectangulo semitransparente para oscurecer el fondo
+            s = pygame.Surface((ancho_pantalla, alto_pantalla))
+            s.set_alpha(180)
+            s.fill((0, 0, 0))
+            pantalla.blit(s, (0, 0))
+            
+            # Mostrar texto de victoria
+            texto_victoria = fuente_grande.render('HAS GANADO!', True, VERDE)
+            rect_victoria = texto_victoria.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
+            pantalla.blit(texto_victoria, rect_victoria)
+            
+            # Mostrar puntuacion final
+            texto_puntuacion = fuente.render(f'Puntuacion: {self.puntuacion}', True, BLANCO)
+            rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
+            pantalla.blit(texto_puntuacion, rect_puntuacion)
+            
+            # Mostrar mensaje si se batio record
+            if self.puntuacion >= self.puntuacion_maxima:
+                texto_record = fuente.render('Nueva puntuacion maxima!', True, VERDE)
+                rect_record = texto_record.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 + 40))
+                pantalla.blit(texto_record, rect_record)
+            
+            # Boton para volver al menu
+            boton_menu = Boton("Volver al Menu", 250, 50, ((ancho_pantalla - 250)//2, alto_pantalla//2 + 100), fuente)
+            boton_menu.dibujar(pantalla)
+            
+            # Verificar clic en boton
+            pos_raton = pygame.mouse.get_pos()
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Solo clic izquierdo
+                    if boton_menu.rect.collidepoint(pos_raton):
+                        return True
+        
+        return False
+
     def mostrar_vidas(self):
         for vida in range(self.vidas - 1):
             x = self.pos_x_inicial_vida + (vida * (self.superficie_vida.get_size()[0] + 10))
@@ -507,70 +586,19 @@ class Juego:
         rect_puntuacion = superficie_puntuacion.get_rect(topleft=(10, 8))
         pantalla.blit(superficie_puntuacion, rect_puntuacion)
         
-        # Mostrar puntuación máxima
+        # Mostrar puntuacion maxima
         superficie_max = self.fuente.render(f'Max: {self.puntuacion_maxima}', False, 'white')
         rect_max = superficie_max.get_rect(midtop=(ancho_pantalla // 2, 8))
         pantalla.blit(superficie_max, rect_max)
 
-    def mostrar_victoria(self, pantalla):
-        if not self.aliens.sprites():
-            # Verificar si ya estamos en pantalla de victoria
-            if not self.victoria_active:
-                # Primera vez que se detecta la victoria
-                self.victoria_active = True
-                # Detener la música al ganar
-                self.musica.stop()
-                
-            # Actualizar puntuación máxima si es necesario
-            if self.puntuacion > self.puntuacion_maxima:
-                guardar_puntuacion_maxima(self.puntuacion)
-                self.puntuacion_maxima = self.puntuacion
-            
-            # Crear un rectángulo semitransparente para oscurecer el fondo
-            s = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
-            s.fill((0, 0, 0, 180))  # Semitransparente
-            pantalla.blit(s, (0, 0))
-            
-            # Mostrar texto de victoria
-            texto_victoria = fuente_grande.render('¡HAS GANADO!', True, VERDE)
-            rect_victoria = texto_victoria.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
-            pantalla.blit(texto_victoria, rect_victoria)
-            
-            # Mostrar puntuación final
-            texto_puntuacion = fuente.render(f'Puntuación: {self.puntuacion}', True, BLANCO)
-            rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
-            pantalla.blit(texto_puntuacion, rect_puntuacion)
-            
-            # Mostrar mensaje si se batió récord
-            if self.puntuacion >= self.puntuacion_maxima:
-                texto_record = fuente.render('¡Nueva puntuación máxima!', True, VERDE)
-                rect_record = texto_record.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 + 40))
-                pantalla.blit(texto_record, rect_record)
-            
-            # Botón para volver al menú
-            boton_menu = Boton("Volver al Menú", 250, 50, ((ancho_pantalla - 250)//2, alto_pantalla//2 + 100), fuente)
-            hover = boton_menu.dibujar(pantalla)
-            
-            # Verificar clic en botón
-            pos_raton = pygame.mouse.get_pos()
-            for evento in pygame.event.get():
-                if evento.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif evento.type == pygame.MOUSEBUTTONDOWN:
-                    if boton_menu.rect.collidepoint(pos_raton):
-                        return True
-            
-            return False
-        return False
-
     def ejecutar(self):
         if self.game_over_active:
-            # Si estamos en game over, mostrar pantalla y verificar botón
             return self.mostrar_game_over(pantalla)
         
+        if not self.aliens.sprites() and not self.victoria_active:
+            self.victoria_active = True
+            
         if self.victoria_active:
-            # Si hemos ganado, mostrar pantalla y verificar botón
             return self.mostrar_victoria(pantalla)
         
         # Juego normal
@@ -614,11 +642,13 @@ class Juego:
 
 if __name__ == '__main__':
     pygame.init()
+    ancho_pantalla = 600
+    alto_pantalla = 600
     pantalla = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
     pygame.display.set_caption("Space Invaders")
     reloj = pygame.time.Clock()
-    fuente = pygame.font.Font('font/Pixeled.ttf', 16)
-    fuente_grande = pygame.font.Font('font/Pixeled.ttf', 32)
+    fuente = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 16)
+    fuente_grande = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 32)
     puntuacion_maxima = cargar_puntuacion_maxima()
     
     # Variables de estado del juego

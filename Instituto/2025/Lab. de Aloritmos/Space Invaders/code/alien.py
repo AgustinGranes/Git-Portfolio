@@ -1,9 +1,18 @@
 import pygame
+import os
+
+# Obtener el directorio actual del script
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+
+def get_resource_path(filename):
+    """Obtiene la ruta completa de un archivo de recursos"""
+    return os.path.join(PARENT_DIR, filename)
 
 class Alien(pygame.sprite.Sprite):
 	def __init__(self,color,x,y):
 		super().__init__()
-		file_path = 'graphics/' + color + '.png'
+		file_path = get_resource_path(f'graphics/{color}.png')
 		self.image = pygame.image.load(file_path).convert_alpha()
 		self.rect = self.image.get_rect(topleft = (x,y))
 
@@ -17,7 +26,7 @@ class Alien(pygame.sprite.Sprite):
 class Extra(pygame.sprite.Sprite):
 	def __init__(self,side,screen_width):
 		super().__init__()
-		self.image = pygame.image.load('graphics/extra.png').convert_alpha()
+		self.image = pygame.image.load(get_resource_path('graphics/extra.png')).convert_alpha()
 		
 		if side == 'right':
 			x = screen_width + 50

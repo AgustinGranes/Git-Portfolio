@@ -2,12 +2,21 @@ import tkinter as tk
 import customtkinter
 from PIL import ImageTk, Image
 import json
+import os
 from tkinter import messagebox
 import random
 import pygame
 
+# Obtener el directorio actual del script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 sesion = 0
 cuenta = None
+
+
+def get_resource_path(filename):
+    """Obtiene la ruta completa de un archivo de recursos"""
+    return os.path.join(current_dir, filename)
 
 
 def iniciar_sesion():
@@ -27,7 +36,7 @@ def iniciar_sesion():
 
     # Cargar la imagen de fondo
     img1 = ImageTk.PhotoImage(Image.open(
-        r"JUEGO COMPLETO\Juego (Main) y Recursos\pattern.png"))
+        r"Instituto\2024\Taller de Computacion\Proyecto Final\pattern.png"))
     l1 = customtkinter.CTkLabel(master=app, image=img1)
     l1.place(relwidth=1, relheight=1)
 
@@ -37,7 +46,7 @@ def iniciar_sesion():
     frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
     # Cargar y redimensionar la imagen del logo
-    img3 = Image.open(r"JUEGO COMPLETO\Juego (Main) y Recursos\logo.png")
+    img3 = Image.open(r"Instituto\2024\Taller de Computacion\Proyecto Final\logo.png")
     img3 = img3.resize((150, 150))
     logo_img = ImageTk.PhotoImage(img3)
 
@@ -64,7 +73,7 @@ def iniciar_sesion():
 
         # Leer el archivo JSON
         try:
-            with open('users.json', 'r') as f:
+            with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
@@ -94,7 +103,7 @@ def iniciar_sesion():
 
         # Leer el archivo JSON
         try:
-            with open('users.json', 'r') as f:
+            with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
@@ -110,7 +119,7 @@ def iniciar_sesion():
             {"username": username, "password": password, "monedas": 0, "puntos": 0})
 
         # Guardar el archivo JSON actualizado
-        with open('users.json', 'w') as f:
+        with open(get_resource_path('users.json'), 'w') as f:
             json.dump(data, f, indent=4)
 
         messagebox.showinfo(
@@ -134,10 +143,12 @@ def iniciar_juego():
     # Configuración de pygame para manejar la música
     try:
         pygame.mixer.init()
-        pygame.mixer.music.load(r"Juego (Main) y Recursos\musica.mp3")
+        pygame.mixer.music.load(get_resource_path("musica.mp3"))
         pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
     except pygame.error as e:
         print(f"Error al cargar la música: {e}")
+        messagebox.showwarning("Advertencia", "No se pudo cargar la música del juego")
 
     # Lista de Cultura
     preguntas = [
@@ -383,13 +394,17 @@ def iniciar_juego():
     def cargar_monedas():
         global monedas
         try:
-            with open('users.json', 'r') as f:
+            with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
             for user in data['users']:
                 if user['username'] == cuenta:
                     monedas = user['monedas']
                     break
         except FileNotFoundError:
+            # Si el archivo no existe, créalo con estructura básica
+            data = {'users': []}
+            with open(get_resource_path('users.json'), 'w') as f:
+                json.dump(data, f, indent=4)
             monedas = 0
         return monedas
 
@@ -398,17 +413,29 @@ def iniciar_juego():
     def guardar_monedas():
         global cuenta, monedas
         try:
-            with open('users.json', 'r') as f:
+            with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
 
+        # Verifica si el usuario existe y actualiza sus monedas
+        usuario_encontrado = False
         for user in data['users']:
             if user['username'] == cuenta:
                 user['monedas'] = monedas
+                usuario_encontrado = True
                 break
+        
+        # Si el usuario no existe, lo agrega
+        if not usuario_encontrado:
+            data['users'].append({
+                'username': cuenta,
+                'password': '',  # Se debe manejar la contraseña apropiadamente
+                'monedas': monedas,
+                'puntos': 0
+            })
 
-        with open('users.json', 'w') as f:
+        with open(get_resource_path('users.json'), 'w') as f:
             json.dump(data, f, indent=4)
 
     class JuegoApp:
@@ -420,7 +447,7 @@ def iniciar_juego():
             self.root.grid_columnconfigure(0, weight=1)
 
             # Fondo de pantalla
-            self.background_image = tk.PhotoImage(file=r"Juego (Main) y Recursos\fondo.png")
+            self.background_image = tk.PhotoImage(file=get_resource_path("fondo.png"))
             self.background_label = tk.Label(root, image=self.background_image)
             self.background_label.place(relwidth=1, relheight=1)
 
@@ -436,7 +463,7 @@ def iniciar_juego():
             self.monedas_frame = tk.Frame(root, bg="white")
             self.monedas_frame.pack(anchor="ne", padx=10, pady=10)
 
-            self.moneda_image = tk.PhotoImage(file=r"Juego (Main) y Recursos\moneda.png").subsample(30)
+            self.moneda_image = tk.PhotoImage(file=get_resource_path("moneda.png")).subsample(30)
             self.moneda_label = tk.Label(
                 self.monedas_frame, image=self.moneda_image, bg="white")
             self.moneda_label.pack(side="left")
@@ -446,7 +473,7 @@ def iniciar_juego():
             self.monedas_text_label.pack(side="left")
 
             # Centrar el logo y los botones
-            self.logo = tk.PhotoImage(file=r"Juego (Main) y Recursos\logo.png").subsample(2)
+            self.logo = tk.PhotoImage(file=get_resource_path("logo.png")).subsample(2)
             self.logo_label = tk.Label(self.menu, image=self.logo, bg="white")
             self.logo_label.grid(row=0, column=0, pady=10)
 
@@ -540,7 +567,6 @@ def iniciar_juego():
                                               bg="white", activebackground="#ececec", borderwidth=0)
             self.finalizar_button.place(relx=0.5, rely=0.77, anchor=tk.CENTER)
 
-            pygame.mixer.music.play(-1)
             self.siguiente_pregunta()
 
         def mostrar_ranking(self):
@@ -569,7 +595,7 @@ def iniciar_juego():
 
             # Cargar datos del archivo JSON
             try:
-                with open('users.json', 'r') as f:
+                with open(get_resource_path('users.json'), 'r') as f:
                     data = json.load(f)
             except FileNotFoundError:
                 data = {'users': []}
