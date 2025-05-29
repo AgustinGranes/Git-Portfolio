@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Type Effect</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-image"></div>
+    <div class="foreground-image"></div>
+    
+    <nav class="menu">
+        <div class="logo-space">
+            <img src="Logo - Sin Fondo.png" alt="Logo">
+        </div>
+        <div class="social-icons">
+            <a href="https://github.com/AgustinGranes/Portfolio" target="_blank">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="mailto:agustingranes@gmail.com">
+                <i class="fas fa-envelope"></i>
+            </a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="typing-container">
+            <span id="auto-type"></span>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var typed = new Typed("#auto-type", {
+                strings: [
+                    "¡Bienvenido!<br>Mi nombre es <span class='nombre'>Agustín</span>.",
+                    "Welcome!<br>My name is <span class='nombre'>Agustin</span>.",
+                    "ようこそ！<br>私の名前は<span class='nombre'>アグスティン</span>です。",
+                    "환영합니다!<br>제 이름은 <span class='nombre'>아구스틴</span>입니다。",
+                    "!مرحباً<br>اسمي <span class='nombre'>أغوستين</span>",
+                    "欢迎！<br>我的名字是<span class='nombre'>奥古斯丁</span>。",
+                    "Bienvenue !<br>Je m'appelle <span class='nombre'>Augustin</span>.",
+                    "Benvenuto!<br>Mi chiamo <span class='nombre'>Agostino</span>.",
+                    "Bem-vindo!<br>Meu nome é <span class='nombre'>Agostinho</span>."
+                ],
+                typeSpeed: 50,
+                backSpeed: 50,
+                loop: true,
+                showCursor: true,
+                cursorChar: '|',
+                contentType: 'html'
+            });
+        });
+    </script>
+</body>
+</html>
