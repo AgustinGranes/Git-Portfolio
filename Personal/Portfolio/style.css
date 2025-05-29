@@ -1,0 +1,191 @@
+/* Importación de fuentes al inicio del CSS */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Ubuntu:wght@500;700&display=swap');
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: #87CEEB; /* Cielo celeste */
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Evita scrollbars por las nubes */
+    position: relative; /* Para el pseudo-elemento de nubes */
+    padding: 20px;
+}
+
+body::before { /* Capa para las nubes animadas */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%; /* Ancho para el bucle de animación */
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 15% 25%, white 40px, transparent 41px), /* Nube 1 */
+        radial-gradient(circle at 20% 23%, white 50px, transparent 51px),
+        radial-gradient(circle at 25% 25%, white 40px, transparent 41px),
+
+        radial-gradient(circle at 55% 65%, white 45px, transparent 46px), /* Nube 2 */
+        radial-gradient(circle at 60% 63%, white 60px, transparent 61px),
+        radial-gradient(circle at 65% 65%, white 45px, transparent 46px),
+
+        radial-gradient(circle at 80% 40%, white 35px, transparent 36px), /* Nube 3 */
+        radial-gradient(circle at 85% 38%, white 50px, transparent 51px),
+        radial-gradient(circle at 90% 40%, white 35px, transparent 36px); /* CORREGIDO: R35px a 35px */
+    background-repeat: repeat-x; /* Repetir horizontalmente */
+    background-size: 50% auto; /* Las nubes ocupan la mitad del ancho del pseudo-elemento */
+    animation: moveClouds 45s linear infinite;
+    z-index: -1;
+    opacity: 0.6; /* Opacidad de las nubes */
+}
+
+@keyframes moveClouds {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-100%); } /* Mueve una vez el ancho del viewport */
+}
+
+.portfolio-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 20px;
+    position: relative;
+    max-width: 1000px;
+    z-index: 1;
+}
+
+.skill-item {
+    position: relative;
+    width: 130px;
+    height: 130px;
+}
+
+.skill-checkbox {
+    display: none;
+}
+
+.bubble {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+    position: absolute;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: float 6s ease-in-out infinite;
+}
+
+.bubble img {
+    max-width: 60%;
+    max-height: 60%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.html-bubble { background-color: rgba(227, 79, 38, 0.7); }
+.css-bubble { background-color: rgba(21, 114, 182, 0.7); }
+.js-bubble { background-color: rgba(247, 223, 30, 0.7); }
+.python-bubble { background-color: rgba(52, 113, 154, 0.7); }
+.js-bubble img { filter: brightness(0.9) contrast(1.1) drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+
+.skill-item:nth-child(1) .bubble { animation-delay: 0s; }
+.skill-item:nth-child(2) .bubble { animation-delay: -1.5s; }
+.skill-item:nth-child(3) .bubble { animation-delay: -3s; }
+.skill-item:nth-child(4) .bubble { animation-delay: -0.8s; }
+
+@keyframes float {
+    0% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-12px) scale(1.03); }
+    100% { transform: translateY(0px) scale(1); }
+}
+
+.skill-modal {
+    visibility: hidden;
+    opacity: 0;
+    /* Centrado inicial (oculto) */
+    transform: translate(-50%, -50%) scale(0.7);
+    transition: opacity 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0s 0.35s;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    width: 85vw;
+    max-width: 420px;
+    background-color: rgba(250, 250, 255, 0.88);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    color: #2c3e50;
+}
+
+.skill-modal h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1a252f;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 1.6em;
+}
+.skill-modal p {
+    font-size: 0.95em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+.skill-modal ul {
+    list-style: none;
+    padding-left: 0;
+    font-size: 0.9em;
+}
+.skill-modal li {
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+.skill-modal li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #3498db;
+    font-weight: bold;
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 26px;
+    font-weight: bold;
+    color: #7f8c8d;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    font-family: sans-serif;
+    line-height: 1;
+}
+.close-modal-btn:hover {
+    color: #e74c3c;
+    transform: scale(1.1);
+}
+
+.skill-checkbox:checked ~ .bubble {
+    transform: scale(0.1) translateY(-30px);
+    opacity: 0;
+    pointer-events: none;
+    animation-play-state: paused;
+}
+
+.skill-checkbox:checked ~ .skill-modal {
+    visibility: visible;
+    opacity: 1;
+    /* Centrado cuando está visible */
+    transform: translate(-50%, -50%) scale(1);
+    transition-delay: 0s, 0s, 0s;
+}
