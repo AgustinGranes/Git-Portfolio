@@ -9,7 +9,7 @@
     <style>
         @font-face {
             font-family: 'MiFuentePersonalizada';
-            src: url('./Type Effect/Barlow-Black.ttf') format('truetype');
+            src: url('./Assets/Barlow-Black.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
@@ -142,7 +142,7 @@
             transform: translateY(-35%);
             width: 125%;
             height: 125%;
-            background-image: url('./Type Effect/blob.jpg');
+            background-image: url('./Assets/blob.jpg');
             background-position: center;
             background-repeat: no-repeat;
             background-size: contain;
@@ -156,12 +156,33 @@
             transform: translateY(-50%);
             width: 150%;
             height: 150%;
-            background-image: url('./Type Effect/Me.png');
+            background-image: url('./Assets/Me.png');
             background-position: center;
             background-repeat: no-repeat;
             background-size: contain;
             z-index: 2;
             pointer-events: none;
+        }
+
+        /* Nueva sección: fondo Banner Fondo.png */
+        #proyectos {
+            position: relative;
+            background: url('./Assets/Banner Fondo.png') center center/cover no-repeat;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #proyectos .contenido-proyectos {
+            position: relative;
+            z-index: 2;
+            color: #fff;
+            text-align: center;
+            background: rgba(0,0,0,0.35);
+            padding: 40px 30px;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
         }
 
         .container {
@@ -396,7 +417,7 @@
 <body>
     <nav class="menu">
         <div class="logo-space">
-            <img src="./Type Effect/Logo - Sin Fondo.png" alt="Logo">
+            <img src="./Assets/Logo - Sin Fondo.png" alt="Logo">
         </div>
         <div class="social-icons">
             <a href="https://github.com/AgustinGranes/Portfolio" target="_blank">
@@ -412,6 +433,7 @@
         <ul>
             <li><a href="#inicio" class="active" data-section="0"></a></li>
             <li><a href="#habilidades" data-section="1"></a></li>
+            <li><a href="#proyectos" data-section="2"></a></li>
         </ul>
     </nav>
 
@@ -497,12 +519,19 @@
         </div>
     </section>
 
+    <section id="proyectos" class="section">
+        <div class="contenido-proyectos">
+            <h1>Proyectos</h1>
+            <p>Aquí puedes agregar información sobre tus proyectos destacados o cualquier otro contenido relevante.</p>
+        </div>
+    </section>
+
     <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Variables globales
             let currentSection = 0;
-            const totalSections = 2;
+            const totalSections = 3;
             let isScrolling = false;
             let scrollTimeout;
             

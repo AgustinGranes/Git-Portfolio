@@ -6,6 +6,7 @@ import os
 from tkinter import messagebox
 import random
 import pygame
+import sys  # <-- Nueva importación
 
 # Obtener el directorio actual del script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -144,7 +145,7 @@ def iniciar_juego():
     try:
         pygame.mixer.init()
         pygame.mixer.music.load(get_resource_path("musica.mp3"))
-        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.set_volume(0.3)
         pygame.mixer.music.play(-1)
     except pygame.error as e:
         print(f"Error al cargar la música: {e}")
@@ -401,7 +402,6 @@ def iniciar_juego():
                     monedas = user['monedas']
                     break
         except FileNotFoundError:
-            # Si el archivo no existe, créalo con estructura básica
             data = {'users': []}
             with open(get_resource_path('users.json'), 'w') as f:
                 json.dump(data, f, indent=4)
@@ -417,335 +417,228 @@ def iniciar_juego():
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
-
-        # Verifica si el usuario existe y actualiza sus monedas
         usuario_encontrado = False
         for user in data['users']:
             if user['username'] == cuenta:
                 user['monedas'] = monedas
                 usuario_encontrado = True
                 break
-        
-        # Si el usuario no existe, lo agrega
         if not usuario_encontrado:
             data['users'].append({
                 'username': cuenta,
-                'password': '',  # Se debe manejar la contraseña apropiadamente
+                'password': '',
                 'monedas': monedas,
                 'puntos': 0
             })
-
         with open(get_resource_path('users.json'), 'w') as f:
             json.dump(data, f, indent=4)
 
     class JuegoApp:
         def __init__(self, root):
             self.root = root
-            self.root.title("Juego de preguntas Huergo :)")
-            self.root.geometry("800x600")
+            self.root.title("Preguntados - Minimal UI")
+            self.root.geometry("900x650")
+            self.root.configure(bg="#18181b")
             self.root.grid_rowconfigure(0, weight=1)
             self.root.grid_columnconfigure(0, weight=1)
 
-            # Fondo de pantalla
+            # Fondo de pantalla con transparencia
             self.background_image = tk.PhotoImage(file=get_resource_path("fondo.png"))
-            self.background_label = tk.Label(root, image=self.background_image)
+            self.background_label = tk.Label(root, image=self.background_image, bg="#18181b")
             self.background_label.place(relwidth=1, relheight=1)
 
             self.preguntas_resueltas = 0
             self.puntos = 0
             self.monedas = monedas
 
-            # Crea el menú principal
-            self.menu = tk.Frame(root, bg="white")
-            self.menu.pack(expand=True)
+            # Menú principal minimalista
+            self.menu = tk.Frame(root, bg="#222226", bd=0, highlightthickness=0)
+            self.menu.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-            # Mostrar la cantidad de monedas en la parte superior derecha
-            self.monedas_frame = tk.Frame(root, bg="white")
-            self.monedas_frame.pack(anchor="ne", padx=10, pady=10)
-
+            # Monedas arriba derecha
+            self.monedas_frame = tk.Frame(root, bg="#222226", bd=0)
+            self.monedas_frame.place(relx=0.98, rely=0.05, anchor="ne")
             self.moneda_image = tk.PhotoImage(file=get_resource_path("moneda.png")).subsample(30)
-            self.moneda_label = tk.Label(
-                self.monedas_frame, image=self.moneda_image, bg="white")
+            self.moneda_label = tk.Label(self.monedas_frame, image=self.moneda_image, bg="#222226")
             self.moneda_label.pack(side="left")
+            self.monedas_text_label = tk.Label(self.monedas_frame, text=f"{self.monedas}", font=("Inter", 22, "bold"), fg="#facc15", bg="#222226")
+            self.monedas_text_label.pack(side="left", padx=(5,0))
 
-            self.monedas_text_label = tk.Label(
-                self.monedas_frame, text=f"{self.monedas}", font=("Helvetica", 32), bg="white")
-            self.monedas_text_label.pack(side="left")
-
-            # Centrar el logo y los botones
+            # Logo centrado
             self.logo = tk.PhotoImage(file=get_resource_path("logo.png")).subsample(2)
-            self.logo_label = tk.Label(self.menu, image=self.logo, bg="white")
-            self.logo_label.grid(row=0, column=0, pady=10)
+            self.logo_label = tk.Label(self.menu, image=self.logo, bg="#222226")
+            self.logo_label.grid(row=0, column=0, pady=(0, 10), columnspan=2)
 
-            # Botones del menú
-            self.jugar_button = tk.Button(self.menu, text="Jugar", command=self.iniciar_juego, font=("Helvetica", 18),
-                                          bg="white", fg="black", activebackground="#ececec", borderwidth=0)
-            self.jugar_button.grid(row=1, column=0, pady=5)
+            # Opciones de menú
+            self.menu_options = [
+                ("Jugar", self.iniciar_juego),
+                ("Ranking", self.mostrar_ranking),
+                ("Configuración", self.abrir_configuracion),
+                ("Tutorial", self.mostrar_tutorial),
+                ("Perfil", self.mostrar_perfil),
+                ("Cerrar sesión", self.cerrar_sesion),
+                ("Salir", root.quit)
+            ]
+            self.menu_buttons = []
+            for i, (text, cmd) in enumerate(self.menu_options):
+                btn = tk.Button(
+                    self.menu, text=text, command=cmd,
+                    font=("Inter", 18, "bold"),
+                    bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15",
+                    bd=0, relief="flat", cursor="hand2",
+                    highlightthickness=0
+                )
+                btn.grid(row=i+1, column=0, pady=7, padx=40, sticky="ew", columnspan=2)
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#3f3f46", fg="#facc15"))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#27272a", fg="#fafafa"))
+                self.menu_buttons.append(btn)
 
-            self.config_button = tk.Button(self.menu, text="Configuración", command=self.abrir_configuracion, font=("Helvetica", 18),
-                                           bg="white", fg="black", activebackground="#ececec", borderwidth=0)
-            self.config_button.grid(row=2, column=0, pady=5)
+            # Centrar el menú
+            self.menu.grid_rowconfigure(tuple(range(len(self.menu_options)+1)), weight=1)
+            self.menu.grid_columnconfigure(0, weight=1)
 
-            self.tutorial_button = tk.Button(self.menu, text="Tutorial", command=self.mostrar_tutorial, font=("Helvetica", 18),
-                                             bg="white", fg="black", activebackground="#ececec", borderwidth=0)
-            self.tutorial_button.grid(row=3, column=0, pady=5)
+        def mostrar_perfil(self):
+            self.menu.place_forget()
+            self.ocultar_monedas()
+            self.perfil_frame = tk.Frame(self.root, bg="#222226", bd=0)
+            self.perfil_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+            tk.Label(self.perfil_frame, text=f"Usuario: {cuenta}", font=("Inter", 22, "bold"), fg="#fafafa", bg="#222226").pack(pady=10)
+            tk.Label(self.perfil_frame, text=f"Monedas: {self.monedas}", font=("Inter", 18), fg="#facc15", bg="#222226").pack(pady=5)
+            tk.Button(self.perfil_frame, text="Volver", command=self.volver_menu, font=("Inter", 16), bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2").pack(pady=20)
 
-            self.ranking_button = tk.Button(self.menu, text="Ranking", command=self.mostrar_ranking, font=("Helvetica", 18),
-                                             bg="white", fg="black", activebackground="#ececec", borderwidth=0)
-            self.ranking_button.grid(row=4, column=0, pady=5)
-
-            self.salir_button = tk.Button(self.menu, text="Salir", command=root.quit, font=("Helvetica", 18),
-                                          bg="white", fg="black", activebackground="#ececec", borderwidth=0)
-            self.salir_button.grid(row=5, column=0, pady=5)
-
-            # Aplicar efectos de hover en los botones
-            for button in [self.jugar_button, self.config_button, self.tutorial_button, self.salir_button]:
-                button.bind("<Enter>", self.on_enter)
-                button.bind("<Leave>", self.on_leave)
-
-            # Aplicar efectos de hover en los botones
-            for button in [self.jugar_button, self.config_button, self.salir_button, self.ranking_button, self.tutorial_button]:
-                button.bind("<Enter>", self.on_enter)
-                button.bind("<Leave>", self.on_leave)
+        def cerrar_sesion(self):
+            self.root.destroy()
+            os.execl(sys.executable, sys.executable, *sys.argv)
 
         def on_enter(self, e):
-            e.widget['background'] = '#d1d1d1'
+            e.widget['background'] = '#3f3f46'
+            e.widget['fg'] = '#facc15'
 
         def on_leave(self, e):
-            e.widget['background'] = 'white'
+            e.widget['background'] = '#27272a'
+            e.widget['fg'] = '#fafafa'
 
         def iniciar_juego(self):
             self.ocultar_monedas()
             self.puntos = 0
             self.preguntas_resueltas = 0
-            self.menu.pack_forget()
-
-            self.juego_frame = tk.Frame(self.root, bg="white")
-            self.juego_frame.pack(fill=tk.BOTH, expand=True)  # Cambios aquí
-
-            # Centrar elementos en el frame del juego
-            self.puntaje_label = tk.Label(
-                self.juego_frame, text=f"Puntos: {self.puntos}", font=("Helvetica", 18), bg="white")
-            self.puntaje_label.place(relx=0.5, rely=0.15, anchor=tk.CENTER)
-
-            self.monedas_label = tk.Label(
-                self.juego_frame, text=f"Monedas: {self.monedas}", font=("Helvetica", 18), bg="white")
-            self.monedas_label.place(relx=0.5, rely=0.20, anchor=tk.CENTER)
-
-            self.pregunta_label = tk.Label(
-                self.juego_frame, text="", wraplength=400, font=("Helvetica", 18), bg="white")
-            self.pregunta_label.place(relx=0.5, rely=0.35, anchor=tk.CENTER)
-
-            # Botones de respuesta
-            self.boton_respuesta1 = tk.Button(self.juego_frame, text="", command=lambda: self.verificar_respuesta(0), width=30, font=("Helvetica", 14),
-                                              bg="white", activebackground="#ececec", borderwidth=0)
-            self.boton_respuesta1.place(
-                relx=0.4, rely=0.5, anchor=tk.CENTER, x=-75)
-
-            self.boton_respuesta2 = tk.Button(self.juego_frame, text="", command=lambda: self.verificar_respuesta(1), width=30, font=("Helvetica", 14),
-                                              bg="white", activebackground="#ececec", borderwidth=0)
-            self.boton_respuesta2.place(
-                relx=0.6, rely=0.5, anchor=tk.CENTER, x=75)
-
-            self.boton_respuesta3 = tk.Button(self.juego_frame, text="", command=lambda: self.verificar_respuesta(2), width=30, font=("Helvetica", 14),
-                                              bg="white", activebackground="#ececec", borderwidth=0)
-            self.boton_respuesta3.place(
-                relx=0.4, rely=0.6, anchor=tk.CENTER, x=-75)
-
-            self.boton_respuesta4 = tk.Button(self.juego_frame, text="", command=lambda: self.verificar_respuesta(3), width=30, font=("Helvetica", 14),
-                                              bg="white", activebackground="#ececec", borderwidth=0)
-            self.boton_respuesta4.place(
-                relx=0.6, rely=0.6, anchor=tk.CENTER, x=75)
-
-            self.numero_pregunta_label = tk.Label(
-                self.juego_frame, text="Preguntas respondidas: 0/10", font=("Helvetica", 18), bg="white")
-            self.numero_pregunta_label.place(
-                relx=0.5, rely=0.72, anchor=tk.CENTER)
-
-            # Botón de finalizar
-            self.finalizar_button = tk.Button(self.juego_frame, text="Finalizar", command=self.finalizar_juego, font=("Helvetica", 18),
-                                              bg="white", activebackground="#ececec", borderwidth=0)
-            self.finalizar_button.place(relx=0.5, rely=0.77, anchor=tk.CENTER)
-
+            self.menu.place_forget()
+            self.juego_frame = tk.Frame(self.root, bg="#222226", bd=0)
+            self.juego_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.7, relheight=0.8)
+            self.puntaje_label = tk.Label(self.juego_frame, text=f"Puntos: {self.puntos}", font=("Inter", 18, "bold"), fg="#fafafa", bg="#222226")
+            self.puntaje_label.pack(pady=(20, 5))
+            self.monedas_label = tk.Label(self.juego_frame, text=f"Monedas: {self.monedas}", font=("Inter", 18, "bold"), fg="#facc15", bg="#222226")
+            self.monedas_label.pack(pady=5)
+            self.pregunta_label = tk.Label(self.juego_frame, text="", wraplength=600, font=("Inter", 20, "bold"), fg="#fafafa", bg="#222226")
+            self.pregunta_label.pack(pady=(30, 20))
+            self.respuesta_buttons = []
+            for i in range(4):
+                btn = tk.Button(self.juego_frame, text="", command=lambda i=i: self.verificar_respuesta(i), width=30, font=("Inter", 16),
+                                bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2")
+                btn.pack(pady=7)
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#3f3f46", fg="#facc15"))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#27272a", fg="#fafafa"))
+                self.respuesta_buttons.append(btn)
+            self.numero_pregunta_label = tk.Label(self.juego_frame, text="Preguntas respondidas: 0/10", font=("Inter", 16), fg="#a1a1aa", bg="#222226")
+            self.numero_pregunta_label.pack(pady=(20, 10))
+            self.finalizar_button = tk.Button(self.juego_frame, text="Finalizar", command=self.finalizar_juego, font=("Inter", 16),
+                                              bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2")
+            self.finalizar_button.pack(pady=10)
+            self.finalizar_button.bind("<Enter>", lambda e: self.finalizar_button.config(bg="#3f3f46", fg="#facc15"))
+            self.finalizar_button.bind("<Leave>", lambda e: self.finalizar_button.config(bg="#27272a", fg="#fafafa"))
             self.siguiente_pregunta()
 
         def mostrar_ranking(self):
             self.ocultar_monedas()
-            self.menu.pack_forget()
-
-            # Crear un frame que ocupe toda la pantalla
-            self.ranking_frame = tk.Frame(self.root, bg="white")
-            self.ranking_frame.pack(fill=tk.BOTH, expand=True)
-
-            # Crear un canvas para el desplazamiento
-            canvas = tk.Canvas(self.ranking_frame, bg="white")
-            scroll_y = tk.Scrollbar(self.ranking_frame, orient="vertical", command=canvas.yview)
-            scrollable_frame = tk.Frame(canvas, bg="white")
-
-            scrollable_frame.bind(
-                "<Configure>",
-                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-            )
-
-            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-
-            canvas.pack(side="left", fill="both", expand=True)
-            scroll_y.pack(side="right", fill="y")
-            canvas.configure(yscrollcommand=scroll_y.set)
-
+            self.menu.place_forget()
+            self.ranking_frame = tk.Frame(self.root, bg="#222226", bd=0)
+            self.ranking_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.7, relheight=0.8)
+            tk.Label(self.ranking_frame, text="Ranking de Monedas", font=("Inter", 24, "bold"), fg="#fafafa", bg="#222226").pack(pady=(20, 10))
             # Cargar datos del archivo JSON
             try:
                 with open(get_resource_path('users.json'), 'r') as f:
                     data = json.load(f)
             except FileNotFoundError:
                 data = {'users': []}
-
-            # Ordenar usuarios por monedas
             usuarios_ordenados = sorted(data['users'], key=lambda x: x['monedas'], reverse=True)
-
-            # Crear cabecera
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=1, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=2, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=3, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=4, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=5, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=6, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=7, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=8, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=9, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=10, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=11, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=12, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=13, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="", font=("Helvetica", 18), bg="white").grid(row=0, column=14, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="PUESTO", font=("Helvetica", 18), bg="white").grid(row=0, column=15, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="USUARIO", font=("Helvetica", 18), bg="white").grid(row=0, column=16, padx=20, pady=10)
-            tk.Label(scrollable_frame, text="MONEDAS", font=("Helvetica", 18), bg="white").grid(row=0, column=17, padx=20, pady=10)
-
-            # Agregar los datos al ranking
-            for index, user in enumerate(usuarios_ordenados):
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=1, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=2, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=3, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=4, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=5, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=6, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=7, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=8, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=9, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=10, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=11, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=12, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=13, padx=20, pady=5)
-                tk.Label(scrollable_frame, text="", font=("Helvetica", 14), bg="white").grid(row=index + 1, column=14, padx=20, pady=5)
-                tk.Label(scrollable_frame, text=index + 1, font=("Helvetica", 14), bg="white").grid(row=index + 1, column=15, padx=20, pady=5)
-                tk.Label(scrollable_frame, text=user['username'], font=("Helvetica", 14), bg="white").grid(row=index + 1, column=16, padx=20, pady=5)
-                tk.Label(scrollable_frame, text=user['monedas'], font=("Helvetica", 14), bg="white").grid(row=index + 1, column=17, padx=20, pady=5)
-
-            # Botón de volver al menú
-            volver_button = tk.Button(self.ranking_frame, text="Volver al Menú", command=self.volver_menu, font=("Helvetica", 18),
-                                    bg="white", activebackground="#ececec", borderwidth=0)
-            volver_button.pack(pady=(10, 20))  # Agrega separación arriba y abajo
+            # Tabla ranking
+            table_frame = tk.Frame(self.ranking_frame, bg="#18181b", bd=0)
+            table_frame.pack(pady=10, fill="both", expand=True)
+            headers = ["Puesto", "Usuario", "Monedas"]
+            for col, h in enumerate(headers):
+                tk.Label(table_frame, text=h, font=("Inter", 18, "bold"), fg="#facc15", bg="#18181b", pady=8, padx=20).grid(row=0, column=col, sticky="nsew")
+            for i, user in enumerate(usuarios_ordenados):
+                bg_color = "#222226" if i % 2 == 0 else "#18181b"
+                tk.Label(table_frame, text=str(i+1), font=("Inter", 16), fg="#fafafa", bg=bg_color, pady=6, padx=20).grid(row=i+1, column=0, sticky="nsew")
+                tk.Label(table_frame, text=user['username'], font=("Inter", 16), fg="#fafafa", bg=bg_color, pady=6, padx=20).grid(row=i+1, column=1, sticky="nsew")
+                tk.Label(table_frame, text=user['monedas'], font=("Inter", 16), fg="#facc15", bg=bg_color, pady=6, padx=20).grid(row=i+1, column=2, sticky="nsew")
+            for col in range(3):
+                table_frame.grid_columnconfigure(col, weight=1)
+            tk.Button(self.ranking_frame, text="Volver al Menú", command=self.volver_menu, font=("Inter", 16),
+                      bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2").pack(pady=20)
 
         def abrir_configuracion(self):
-            self.menu.pack_forget()
-
-            # Ocultar el frame de monedas
-            self.monedas_frame.pack_forget()
-
-            self.config_frame = tk.Frame(self.root, bg="white")
-            self.config_frame.pack(fill=tk.BOTH, expand=True)
-
-            # Iniciar música en configuración
-            pygame.mixer.music.play(-1)
-
-            # Centrar la etiqueta del volumen
-            self.volumen_label = tk.Label(
-                self.config_frame, text="Volumen de la música (0 a 1):", font=("Helvetica", 18), bg="white")
-            self.volumen_label.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
-
-            # Centrar el slider de volumen
-            self.volumen_slider = tk.Scale(self.config_frame, from_=0, to=1, resolution=0.1,
-                                        orient=tk.HORIZONTAL, command=self.cambiar_volumen, bg="white")
-            self.volumen_slider.set(pygame.mixer.music.get_volume() * 10)  # Ajusta el slider al volumen actual
-            self.volumen_slider.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-            # Centrar el botón de volver
-            self.volver_button = tk.Button(self.config_frame, text="Volver al menú", command=self.volver_menu, font=("Helvetica", 18),
-                                        bg="white", activebackground="#ececec", borderwidth=0)
-            self.volver_button.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
-
-            # Efectos de hover en el botón de volver
-            self.volver_button.bind("<Enter>", self.on_enter)
-            self.volver_button.bind("<Leave>", self.on_leave)
+            self.menu.place_forget()
+            self.ocultar_monedas()
+            self.config_frame = tk.Frame(self.root, bg="#222226", bd=0)
+            self.config_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.5, relheight=0.5)
+            tk.Label(self.config_frame, text="Configuración", font=("Inter", 24, "bold"), fg="#fafafa", bg="#222226").pack(pady=(20, 10))
+            tk.Label(self.config_frame, text="Volumen de la música", font=("Inter", 16), fg="#fafafa", bg="#222226").pack(pady=10)
+            self.volumen_slider = tk.Scale(self.config_frame, from_=0, to=1, resolution=0.05,
+                                           orient=tk.HORIZONTAL, command=self.cambiar_volumen, bg="#222226", fg="#facc15", troughcolor="#27272a", highlightthickness=0, length=300)
+            self.volumen_slider.set(pygame.mixer.music.get_volume())
+            self.volumen_slider.pack(pady=10)
+            tk.Button(self.config_frame, text="Volver", command=self.volver_menu, font=("Inter", 16),
+                      bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2").pack(pady=20)
 
         def cambiar_volumen(self, valor):
             pygame.mixer.music.set_volume(float(valor))
 
         def volver_menu(self):
-            # Detener música al volver al menú
             pygame.mixer.music.stop()
-
-            # Solo oculta config_frame si existe
             if hasattr(self, 'config_frame'):
-                self.config_frame.pack_forget()
-                
-            # Ocultar el frame del tutorial
+                self.config_frame.place_forget()
             if hasattr(self, 'tutorial_frame'):
-                self.tutorial_frame.pack_forget()
-
-            # Ocultar el frame del ranking si existe
+                self.tutorial_frame.place_forget()
             if hasattr(self, 'ranking_frame'):
-                self.ranking_frame.pack_forget()  # Oculta el ranking frame
-                del self.ranking_frame  # Elimina la referencia del ranking frame
-                
-            self.menu.pack(expand=True)
-            self.mostrar_monedas()  # Asegúrate de que las monedas se muestren al volver
+                self.ranking_frame.place_forget()
+            if hasattr(self, 'perfil_frame'):
+                self.perfil_frame.place_forget()
+            if hasattr(self, 'juego_frame'):
+                self.juego_frame.place_forget()
+            self.menu.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+            self.mostrar_monedas()
             self.actualizar_monedas()
 
         def mostrar_tutorial(self):
+            self.menu.place_forget()
             self.ocultar_monedas()
-            self.menu.pack_forget()
-            self.tutorial_frame = tk.Frame(self.root, bg="white")
-            self.tutorial_frame.pack(fill=tk.BOTH, expand=True)
-
-            self.textos = [
-                "Para empezar, tenemos que conocer nuestra interfaz y de que consta la misma, que funcion cumple cada cosa y como poder jugar correctamente.",
-                "Contamos con un tutorial (que es la pestaña donde te encuentras actualmente)",
-                "Un contador de monedas que se despliega debajo en la esquina inferior derecha, donde podemos ver las monedas que recolectamos.",
-                "Un botón de configuración, donde por ejemplo se puede modificar el volumen del juego a como se requiera.",
-                "Y por último, el botón de juego, el cual al presionarlo accedes automáticamente al juego y en el cual se deben responder preguntas.",
-                "Una pregunta correcta, vale 10 puntos, y por cada punto se te otorga una moneda al final. Te deseamos suerte en tu experiencia, ¡ojalá ganes muchas monedas!"
+            self.tutorial_frame = tk.Frame(self.root, bg="#222226", bd=0)
+            self.tutorial_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.6, relheight=0.7)
+            textos = [
+                "Bienvenido a Preguntados.\n\nLa interfaz es minimalista y clara. Usa el menú para navegar.",
+                "El contador de monedas está arriba a la derecha.\n\nGana monedas respondiendo preguntas.",
+                "Configura el volumen y otros ajustes en la sección de configuración.",
+                "Presiona 'Jugar' para comenzar. Cada respuesta correcta suma puntos y monedas.",
+                "¡Disfruta y compite en el ranking!"
             ]
+            self.tutorial_index = 0
+            self.tutorial_label = tk.Label(self.tutorial_frame, text=textos[self.tutorial_index], font=("Inter", 18), fg="#fafafa", bg="#222226", wraplength=600, justify="center")
+            self.tutorial_label.pack(pady=(40, 30))
+            self.siguiente_button = tk.Button(self.tutorial_frame, text="Siguiente", font=("Inter", 16),
+                                              bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2",
+                                              command=lambda: self.siguiente_texto(textos))
+            self.siguiente_button.pack(pady=10)
+            self.finalizar_button = tk.Button(self.tutorial_frame, text="Finalizar", command=self.volver_menu, font=("Inter", 16),
+                                              bg="#27272a", fg="#fafafa", activebackground="#3f3f46", activeforeground="#facc15", bd=0, relief="flat", cursor="hand2")
+            self.finalizar_button.pack(pady=10)
 
-            self.indice = 0
-            self.contador_siguiente = 0  # Contador para el botón "Siguiente"
-
-            self.texto_label = tk.Label(
-                self.tutorial_frame, text=self.textos[self.indice], font=("Helvetica", 18), bg="white", wraplength=700)
-            self.texto_label.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
-
-            self.siguiente_button = tk.Button(self.tutorial_frame, text="Siguiente", command=self.siguiente_texto, font=("Helvetica", 18),
-                                            bg="white", activebackground="#ececec", borderwidth=0)
-            self.siguiente_button.place(relx=0.5, rely=0.57, anchor=tk.CENTER)
-
-            self.finalizar_button = tk.Button(self.tutorial_frame, text="Finalizar", command=self.volver_menu, font=("Helvetica", 18),
-                                            bg="white", activebackground="#ececec", borderwidth=0)
-            self.finalizar_button.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
-
-        def siguiente_texto(self):
-            self.indice += 1
-            self.contador_siguiente += 1  # Incrementar contador al presionar el botón
-
-            # Verificar si se debe mover el botón
-            if self.contador_siguiente >= 5:
-                self.siguiente_button.place(relx=200, rely=200)  # Mover el botón a una nueva posición
-
-            if self.indice < len(self.textos):
-                self.texto_label.config(text=self.textos[self.indice])
-                # También puedes ocultar el botón si se llega al último texto
+        def siguiente_texto(self, textos):
+            self.tutorial_index += 1
+            if self.tutorial_index < len(textos):
+                self.tutorial_label.config(text=textos[self.tutorial_index])
             else:
-                self.siguiente_button.pack_forget()  # Asegurarse de ocultar el botón si se supera el índice
+                self.siguiente_button.pack_forget()
 
         def siguiente_pregunta(self):
             if self.preguntas_resueltas >= 10:
@@ -753,36 +646,25 @@ def iniciar_juego():
                     "Fin del juego", f"Has respondido 10 preguntas. Tu puntaje final es {self.puntos}.")
                 self.finalizar_juego()
                 return
-
             self.preguntas_resueltas += 1
             self.numero_pregunta_label.config(
                 text=f"Preguntas respondidas: {self.preguntas_resueltas}/10")
-
-            # Selecciona una pregunta aleatoria de la lista
             self.pregunta_actual = random.choice(preguntas)
-
-            # Actualiza la etiqueta de la pregunta
             self.pregunta_label.config(text=self.pregunta_actual["pregunta"])
-
-            # Mezcla las opciones de respuesta aleatoriamente
-            opciones = self.pregunta_actual["opciones"]
+            opciones = self.pregunta_actual["opciones"][:]
             random.shuffle(opciones)
-
-            # Configura el texto de los botones de respuesta
-            self.boton_respuesta1.config(text=opciones[0])
-            self.boton_respuesta2.config(text=opciones[1])
-            self.boton_respuesta3.config(text=opciones[2])
-            self.boton_respuesta4.config(text=opciones[3])
+            for i, btn in enumerate(self.respuesta_buttons):
+                btn.config(text=opciones[i])
+            self.opciones_actuales = opciones
 
         def verificar_respuesta(self, opcion):
-            respuesta_usuario = self.pregunta_actual["opciones"][opcion]
+            respuesta_usuario = self.opciones_actuales[opcion]
             if respuesta_usuario == self.pregunta_actual["respuesta"]:
                 self.puntos += 10
                 messagebox.showinfo("Correcto", "¡Respuesta correcta!")
             else:
                 messagebox.showerror(
                     "Incorrecto", f"Respuesta incorrecta. La respuesta correcta es: {self.pregunta_actual['respuesta']}")
-
             self.puntaje_label.config(text=f"Puntos: {self.puntos}")
             self.siguiente_pregunta()
 
@@ -793,9 +675,9 @@ def iniciar_juego():
             guardar_monedas()
             messagebox.showinfo(
                 "Juego finalizado", f"Has finalizado el juego con {self.puntos} puntos. Ahora tienes {self.monedas} monedas.")
-            self.juego_frame.pack_forget()
+            self.juego_frame.place_forget()
             pygame.mixer.music.stop()
-            self.menu.pack(expand=True)
+            self.menu.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
             self.mostrar_monedas()
             self.actualizar_monedas()
 
@@ -803,10 +685,10 @@ def iniciar_juego():
             self.monedas_text_label.config(text=f"{self.monedas}")
 
         def ocultar_monedas(self):
-            self.monedas_frame.pack_forget()
+            self.monedas_frame.place_forget()
 
         def mostrar_monedas(self):
-            self.monedas_frame.pack(anchor="ne", padx=10, pady=10)
+            self.monedas_frame.place(relx=0.98, rely=0.05, anchor="ne")
 
     root = tk.Tk()
     app = JuegoApp(root)

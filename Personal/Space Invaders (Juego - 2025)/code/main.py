@@ -44,16 +44,29 @@ def cargar_puntuacion_maxima():
             return 0
     return 0
 
-def guardar_puntuacion_maxima(puntuacion):
+def guardar_puntuacion_maxima(puntuacion, nombre="Jugador"):
     archivo_puntuacion = get_resource_path('highscore.json')
     try:
+        # Leer ranking existente
+        ranking = []
+        if os.path.exists(archivo_puntuacion):
+            with open(archivo_puntuacion, 'r') as archivo:
+                datos = json.load(archivo)
+                if isinstance(datos, dict) and 'ranking' in datos:
+                    ranking = datos['ranking']
+                elif 'puntuacion_maxima' in datos:
+                    ranking = [("Jugador", datos['puntuacion_maxima'])]
+        # Agregar nueva puntuación
+        ranking.append((nombre, puntuacion))
+        # Ordenar y dejar top 10
+        ranking = sorted(ranking, key=lambda x: x[1], reverse=True)[:10]
         with open(archivo_puntuacion, 'w') as archivo:
-            json.dump({'puntuacion_maxima': puntuacion}, archivo)
+            json.dump({'ranking': ranking}, archivo)
     except Exception as e:
         print(f"Error al guardar puntuación: {e}")
 
 class Boton:
-    def __init__(self, texto, ancho, alto, pos, fuente):
+    def __init__(self, texto, ancho, alto, pos, fuente, color_fondo=(40, 40, 40, 180), color_hover=(80, 80, 80, 220), color_borde=(255,255,255,80), radio=16):
         self.texto = texto
         self.ancho = ancho
         self.alto = alto
@@ -61,68 +74,60 @@ class Boton:
         self.fuente = fuente
         self.rect = pygame.Rect(pos[0], pos[1], ancho, alto)
         self.click = False
-        
+        self.color_fondo = color_fondo
+        self.color_hover = color_hover
+        self.color_borde = color_borde
+        self.radio = radio
+        self.hover = False
+
     def dibujar(self, pantalla):
         pos_raton = pygame.mouse.get_pos()
         self.hover = self.rect.collidepoint(pos_raton)
-        
-        # Colores según estado
-        color_boton = (200, 200, 200) if self.hover else (100, 100, 100)
-        color_texto = (0, 0, 0) if self.hover else (255, 255, 255)
-        
-        # Dibujar el botón con borde
-        pygame.draw.rect(pantalla, color_boton, self.rect)
-        pygame.draw.rect(pantalla, (255, 255, 255), self.rect, 2)  # Borde blanco
-        
-        # Centrar texto en el botón
-        superficie_texto = self.fuente.render(self.texto, True, color_texto)
-        ancho_texto = superficie_texto.get_width()
-        alto_texto = superficie_texto.get_height()
-        x_texto = self.pos[0] + (self.ancho - ancho_texto) // 2
-        y_texto = self.pos[1] + (self.alto - alto_texto) // 2
+        color = self.color_hover if self.hover else self.color_fondo
+        # Crear superficie con alpha para transparencia
+        boton_surface = pygame.Surface((self.ancho, self.alto), pygame.SRCALPHA)
+        pygame.draw.rect(boton_surface, color, (0, 0, self.ancho, self.alto), border_radius=self.radio)
+        pygame.draw.rect(boton_surface, self.color_borde, (0, 0, self.ancho, self.alto), 2, border_radius=self.radio)
+        pantalla.blit(boton_surface, self.pos)
+        # Centrar texto
+        superficie_texto = self.fuente.render(self.texto, True, (255,255,255) if self.hover else (220,220,220))
+        x_texto = self.pos[0] + (self.ancho - superficie_texto.get_width()) // 2
+        y_texto = self.pos[1] + (self.alto - superficie_texto.get_height()) // 2
         pantalla.blit(superficie_texto, (x_texto, y_texto))
-        
         return self.hover
 
 def mostrar_menu():
     pantalla.fill(GRIS_OSCURO)
     pos_raton = pygame.mouse.get_pos()
-    
-    # Cargar y mostrar el logo
+    # Overlay semitransparente
+    overlay = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+    overlay.fill((20, 20, 20, 180))
+    pantalla.blit(overlay, (0, 0))
+    # Logo centrado
     try:
-        logo = pygame.image.load(r'Personal\Space Invaders (Juego - 2025)\graphics\logo.png').convert_alpha()
-        # Ajustar tamaño si es necesario (opcional)
-        ancho_logo = min(400, ancho_pantalla * 0.7)  # Limitar el ancho máximo
-        alto_logo = ancho_logo * (logo.get_height() / logo.get_width())  # Mantener proporción
-        logo = pygame.transform.scale(logo, (int(ancho_logo), int(alto_logo)))
-        
-        # Posicionar logo centrado, encima de los botones
+        logo = pygame.image.load(get_resource_path('graphics/logo.png')).convert_alpha()
+        ancho_logo = min(320, ancho_pantalla * 0.6)
+        alto_logo = ancho_logo * (logo.get_height() / logo.get_width())
+        logo = pygame.transform.smoothscale(logo, (int(ancho_logo), int(alto_logo)))
         x_logo = (ancho_pantalla - logo.get_width()) // 2
-        y_logo = 50  # Espacio desde arriba
+        y_logo = 60
         pantalla.blit(logo, (x_logo, y_logo))
-        
-        inicio_y = y_logo + logo.get_height() + 50  # Botones después del logo
+        inicio_y = y_logo + logo.get_height() + 40
     except:
-        print("No se pudo cargar el logo.png. Verifica que exista en la carpeta graphics.")
-        inicio_y = 100  # Posición predeterminada sin logo
-    
-    # Definir tamaño estándar para todos los botones
-    ancho_boton = 200
-    alto_boton = 50
-    espacio_boton = 20  # Espacio entre botones
-    
-    # Crear botones centrados
+        inicio_y = 100
+    # Opciones de menú ampliadas
+    opciones_menu = ["Jugar", "Multijugador", "Opciones", "Ranking", "Créditos", "Salir"]
+    ancho_boton = 260
+    alto_boton = 48
+    espacio_boton = 18
     botones = []
-    opciones_menu = ["Jugar", "Multijugador", "Opciones", "Salir"]
-    
+    fuente_menu = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 22)
     for i, opcion in enumerate(opciones_menu):
         x_boton = (ancho_pantalla - ancho_boton) // 2
         y_boton = inicio_y + i * (alto_boton + espacio_boton)
-        
-        boton = Boton(opcion, ancho_boton, alto_boton, (x_boton, y_boton), fuente)
-        hover = boton.dibujar(pantalla)
+        boton = Boton(opcion, ancho_boton, alto_boton, (x_boton, y_boton), fuente_menu)
+        boton.dibujar(pantalla)
         botones.append((boton, opcion))
-    
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             pygame.quit()
@@ -130,7 +135,6 @@ def mostrar_menu():
         elif evento.type == pygame.MOUSEBUTTONDOWN:
             for boton, opcion in botones:
                 if boton.rect.collidepoint(pos_raton):
-                    print(f"Seleccionaste: {opcion}")
                     if opcion == "Salir":
                         pygame.quit()
                         sys.exit()
@@ -142,48 +146,40 @@ def mostrar_menu():
                         return {"accion": "jugar", "modo": "multi"}
                     elif opcion == "Opciones":
                         return {"accion": "opciones"}
-                    
+                    elif opcion == "Ranking":
+                        return {"accion": "ranking"}
+                    elif opcion == "Créditos":
+                        return {"accion": "creditos"}
     return {"accion": "menu"}
 
 def mostrar_opciones():
     pantalla.fill(GRIS_OSCURO)
-   
+    overlay = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+    overlay.fill((20, 20, 20, 200))
+    pantalla.blit(overlay, (0, 0))
     titulo = fuente_grande.render("OPCIONES", True, BLANCO)
-    rect_titulo = titulo.get_rect(center=(ancho_pantalla//2, 100))
+    rect_titulo = titulo.get_rect(center=(ancho_pantalla//2, 90))
     pantalla.blit(titulo, rect_titulo)
-   
-    # Mejorar espaciado y tamaño de los textos para que se vean bien
-    fuente_opciones = pygame.font.Font('font/Pixeled.ttf', 14)  # Usar una fuente más pequeña
-   
-    # Textos de música y efectos - Mejor espaciados
-    texto_musica = fuente_opciones.render("Música: " + str(int(niveles_volumen["musica"]*100)) + "%", True, BLANCO)
+    fuente_opciones = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 18)
+    texto_musica = fuente_opciones.render(f"Música: {int(niveles_volumen['musica']*100)}%", True, BLANCO)
     rect_texto_musica = texto_musica.get_rect(center=(ancho_pantalla//2, 200))
     pantalla.blit(texto_musica, rect_texto_musica)
-   
-    texto_efectos = fuente_opciones.render("Efectos: " + str(int(niveles_volumen["efectos"]*100)) + "%", True, BLANCO)
-    rect_texto_efectos = texto_efectos.get_rect(center=(ancho_pantalla//2, 300))
+    texto_efectos = fuente_opciones.render(f"Efectos: {int(niveles_volumen['efectos']*100)}%", True, BLANCO)
+    rect_texto_efectos = texto_efectos.get_rect(center=(ancho_pantalla//2, 270))
     pantalla.blit(texto_efectos, rect_texto_efectos)
-   
-    # Botones para música - Mejor espaciado
-    boton_musica_menos = Boton("-", 50, 50, (ancho_pantalla//2 - 150, 180), fuente)
+    # Botones de volumen
+    boton_musica_menos = Boton("-", 48, 48, (ancho_pantalla//2 - 120, 180), fuente_grande)
     boton_musica_menos.dibujar(pantalla)
-   
-    boton_musica_mas = Boton("+", 50, 50, (ancho_pantalla//2 + 100, 180), fuente)
+    boton_musica_mas = Boton("+", 48, 48, (ancho_pantalla//2 + 72, 180), fuente_grande)
     boton_musica_mas.dibujar(pantalla)
-   
-    # Botones para efectos - Mejor espaciado
-    boton_efectos_menos = Boton("-", 50, 50, (ancho_pantalla//2 - 150, 280), fuente)
+    boton_efectos_menos = Boton("-", 48, 48, (ancho_pantalla//2 - 120, 250), fuente_grande)
     boton_efectos_menos.dibujar(pantalla)
-   
-    boton_efectos_mas = Boton("+", 50, 50, (ancho_pantalla//2 + 100, 280), fuente)
+    boton_efectos_mas = Boton("+", 48, 48, (ancho_pantalla//2 + 72, 250), fuente_grande)
     boton_efectos_mas.dibujar(pantalla)
-   
-    # Botón para volver
-    boton_volver = Boton("Volver", 200, 50, ((ancho_pantalla - 200)//2, 400), fuente)
+    # Botón volver
+    boton_volver = Boton("Volver", 200, 48, ((ancho_pantalla - 200)//2, 370), fuente_grande)
     boton_volver.dibujar(pantalla)
-   
     pos_raton = pygame.mouse.get_pos()
-   
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             pygame.quit()
@@ -191,23 +187,18 @@ def mostrar_opciones():
         elif evento.type == pygame.MOUSEBUTTONDOWN:
             if boton_volver.rect.collidepoint(pos_raton):
                 return {"accion": "menu"}
-           
-            # Ajustar volumen de música
             if boton_musica_menos.rect.collidepoint(pos_raton):
                 niveles_volumen["musica"] = max(0.0, round(niveles_volumen["musica"] - 0.1, 1))
                 actualizar_volumenes()
             elif boton_musica_mas.rect.collidepoint(pos_raton):
                 niveles_volumen["musica"] = min(1.0, round(niveles_volumen["musica"] + 0.1, 1))
                 actualizar_volumenes()
-               
-            # Ajustar volumen de efectos
             if boton_efectos_menos.rect.collidepoint(pos_raton):
                 niveles_volumen["efectos"] = max(0.0, round(niveles_volumen["efectos"] - 0.1, 1))
                 actualizar_volumenes()
             elif boton_efectos_mas.rect.collidepoint(pos_raton):
                 niveles_volumen["efectos"] = min(1.0, round(niveles_volumen["efectos"] + 0.1, 1))
                 actualizar_volumenes()
-   
     return {"accion": "opciones"}
 
 def actualizar_volumenes():
@@ -478,65 +469,95 @@ class Juego:
             self.jugador2.sprite.lasers.empty()
 
     def mostrar_game_over(self, pantalla):
-        # Detener todos los sonidos
         self.detener_todos_sonidos()
-        
-        # Actualizar puntuacion maxima si es necesario
         if self.puntuacion > self.puntuacion_maxima:
-            guardar_puntuacion_maxima(self.puntuacion)
+            # Pedir nombre minimalista
+            nombre = "Jugador"
+            input_box = pygame.Rect((ancho_pantalla-300)//2, alto_pantalla//2+60, 300, 48)
+            activo = True
+            texto_nombre = ""
+            while activo:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif evento.type == pygame.KEYDOWN:
+                        if evento.key == pygame.K_RETURN:
+                            if texto_nombre.strip():
+                                nombre = texto_nombre.strip()
+                                activo = False
+                        elif evento.key == pygame.K_BACKSPACE:
+                            texto_nombre = texto_nombre[:-1]
+                        elif len(texto_nombre) < 12 and evento.unicode.isprintable():
+                            texto_nombre += evento.unicode
+                pantalla.fill(GRIS_OSCURO)
+                s = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+                s.set_alpha(180)
+                s.fill((0, 0, 0))
+                pantalla.blit(s, (0, 0))
+                texto_game_over = fuente_grande.render('GAME OVER', True, ROJO)
+                rect_game_over = texto_game_over.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
+                pantalla.blit(texto_game_over, rect_game_over)
+                texto_puntuacion = fuente.render(f'Puntuacion: {self.puntuacion}', True, BLANCO)
+                rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
+                pantalla.blit(texto_puntuacion, rect_puntuacion)
+                # Input box
+                pygame.draw.rect(pantalla, (40,40,40,220), input_box, border_radius=12)
+                pygame.draw.rect(pantalla, (255,255,255,80), input_box, 2, border_radius=12)
+                texto_input = fuente.render(texto_nombre or "Ingresa tu nombre...", True, BLANCO)
+                pantalla.blit(texto_input, (input_box.x+12, input_box.y+12))
+                pygame.display.flip()
+            guardar_puntuacion_maxima(self.puntuacion, nombre)
             self.puntuacion_maxima = self.puntuacion
-            
-        # Crear un rectangulo semitransparente para oscurecer el fondo
-        s = pygame.Surface((ancho_pantalla, alto_pantalla))
-        s.set_alpha(180)
-        s.fill((0, 0, 0))
-        pantalla.blit(s, (0, 0))
-        
-        # Mostrar texto de Game Over
-        texto_game_over = fuente_grande.render('GAME OVER', True, ROJO)
-        rect_game_over = texto_game_over.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
-        pantalla.blit(texto_game_over, rect_game_over)
-        
-        # Mostrar puntuacion final
-        texto_puntuacion = fuente.render(f'Puntuacion: {self.puntuacion}', True, BLANCO)
-        rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
-        pantalla.blit(texto_puntuacion, rect_puntuacion)
-        
-        # Mostrar mensaje si se batio record
-        if self.puntuacion >= self.puntuacion_maxima:
-            texto_record = fuente.render('Nueva puntuacion maxima!', True, VERDE)
-            rect_record = texto_record.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 + 40))
-            pantalla.blit(texto_record, rect_record)
-
-        # Boton para volver al menu
-        boton_menu = Boton("Volver al Menu", 250, 50, ((ancho_pantalla - 250)//2, alto_pantalla//2 + 100), fuente)
-        boton_menu.dibujar(pantalla)
-        
-        # Verificar clic en boton
-        pos_raton = pygame.mouse.get_pos()
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:  # Solo clic izquierdo
-                if boton_menu.rect.collidepoint(pos_raton):
-                    return True
-        
-        return False
+        else:
+            guardar_puntuacion_maxima(self.puntuacion)
+        # ...existing code...
 
     def mostrar_victoria(self, pantalla):
         if not self.aliens.sprites():
-            # Detener todos los sonidos
             self.detener_todos_sonidos()
-            
-            # Verificar si ya estamos en pantalla de victoria
             if not self.victoria_active:
                 self.victoria_active = True
-            
-            # Actualizar puntuacion maxima si es necesario
             if self.puntuacion > self.puntuacion_maxima:
-                guardar_puntuacion_maxima(self.puntuacion)
+                # Pedir nombre minimalista
+                nombre = "Jugador"
+                input_box = pygame.Rect((ancho_pantalla-300)//2, alto_pantalla//2+60, 300, 48)
+                activo = True
+                texto_nombre = ""
+                while activo:
+                    for evento in pygame.event.get():
+                        if evento.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+                        elif evento.type == pygame.KEYDOWN:
+                            if evento.key == pygame.K_RETURN:
+                                if texto_nombre.strip():
+                                    nombre = texto_nombre.strip()
+                                    activo = False
+                            elif evento.key == pygame.K_BACKSPACE:
+                                texto_nombre = texto_nombre[:-1]
+                            elif len(texto_nombre) < 12 and evento.unicode.isprintable():
+                                texto_nombre += evento.unicode
+                    pantalla.fill(GRIS_OSCURO)
+                    s = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+                    s.set_alpha(180)
+                    s.fill((0, 0, 0))
+                    pantalla.blit(s, (0, 0))
+                    texto_victoria = fuente_grande.render('HAS GANADO!', True, VERDE)
+                    rect_victoria = texto_victoria.get_rect(center=(ancho_pantalla//2, alto_pantalla//2 - 50))
+                    pantalla.blit(texto_victoria, rect_victoria)
+                    texto_puntuacion = fuente.render(f'Puntuacion: {self.puntuacion}', True, BLANCO)
+                    rect_puntuacion = texto_puntuacion.get_rect(center=(ancho_pantalla//2, alto_pantalla//2))
+                    pantalla.blit(texto_puntuacion, rect_puntuacion)
+                    pygame.draw.rect(pantalla, (40,40,40,220), input_box, border_radius=12)
+                    pygame.draw.rect(pantalla, (255,255,255,80), input_box, 2, border_radius=12)
+                    texto_input = fuente.render(texto_nombre or "Ingresa tu nombre...", True, BLANCO)
+                    pantalla.blit(texto_input, (input_box.x+12, input_box.y+12))
+                    pygame.display.flip()
+                guardar_puntuacion_maxima(self.puntuacion, nombre)
                 self.puntuacion_maxima = self.puntuacion
+            else:
+                guardar_puntuacion_maxima(self.puntuacion)
             
             # Crear un rectangulo semitransparente para oscurecer el fondo
             s = pygame.Surface((ancho_pantalla, alto_pantalla))
@@ -640,25 +661,97 @@ class Juego:
         # Devolver True si el juego ha terminado y debemos volver al menú
         return False
 
+def mostrar_ranking():
+    pantalla.fill(GRIS_OSCURO)
+    overlay = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+    overlay.fill((20, 20, 20, 210))
+    pantalla.blit(overlay, (0, 0))
+    titulo = fuente_grande.render("RANKING", True, BLANCO)
+    rect_titulo = titulo.get_rect(center=(ancho_pantalla//2, 80))
+    pantalla.blit(titulo, rect_titulo)
+    # Leer top 5 del archivo de puntuaciones
+    archivo_puntuacion = get_resource_path('highscore.json')
+    ranking = []
+    if os.path.exists(archivo_puntuacion):
+        try:
+            with open(archivo_puntuacion, 'r') as archivo:
+                datos = json.load(archivo)
+                if isinstance(datos, dict) and 'ranking' in datos:
+                    ranking = datos['ranking']
+                elif 'puntuacion_maxima' in datos:
+                    ranking = [("Jugador", datos['puntuacion_maxima'])]
+        except:
+            ranking = []
+    fuente_rank = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 20)
+    y_base = 140
+    for i, entry in enumerate(ranking[:5]):
+        nombre = entry[0] if isinstance(entry, (list, tuple)) else "Jugador"
+        punt = entry[1] if isinstance(entry, (list, tuple)) else entry
+        texto = fuente_rank.render(f"{i+1}. {nombre} - {punt}", True, VERDE if i==0 else BLANCO)
+        rect = texto.get_rect(center=(ancho_pantalla//2, y_base + i*48))
+        pantalla.blit(texto, rect)
+    if not ranking:
+        texto = fuente_rank.render("No hay puntuaciones aún.", True, BLANCO)
+        rect = texto.get_rect(center=(ancho_pantalla//2, y_base + 24))
+        pantalla.blit(texto, rect)
+    boton_volver = Boton("Volver", 200, 48, ((ancho_pantalla - 200)//2, alto_pantalla - 100), fuente_grande)
+    boton_volver.dibujar(pantalla)
+    pos_raton = pygame.mouse.get_pos()
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            if boton_volver.rect.collidepoint(pos_raton):
+                return {"accion": "menu"}
+    return {"accion": "ranking"}
+
+def mostrar_creditos():
+    pantalla.fill(GRIS_OSCURO)
+    overlay = pygame.Surface((ancho_pantalla, alto_pantalla), pygame.SRCALPHA)
+    overlay.fill((20, 20, 20, 210))
+    pantalla.blit(overlay, (0, 0))
+    titulo = fuente_grande.render("CRÉDITOS", True, BLANCO)
+    rect_titulo = titulo.get_rect(center=(ancho_pantalla//2, 90))
+    pantalla.blit(titulo, rect_titulo)
+    fuente_cred = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 18)
+    creditos = [
+        "Space Invaders (2025)",
+        "Desarrollador: Tu Nombre",
+        "Gráficos: OpenGameArt, Pixeled Font",
+        "Sonidos: freesound.org",
+        "Inspirado en SHADCN UI"
+    ]
+    for i, linea in enumerate(creditos):
+        texto = fuente_cred.render(linea, True, BLANCO)
+        rect = texto.get_rect(center=(ancho_pantalla//2, 170 + i*38))
+        pantalla.blit(texto, rect)
+    boton_volver = Boton("Volver", 200, 48, ((ancho_pantalla - 200)//2, alto_pantalla - 100), fuente_grande)
+    boton_volver.dibujar(pantalla)
+    pos_raton = pygame.mouse.get_pos()
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            if boton_volver.rect.collidepoint(pos_raton):
+                return {"accion": "menu"}
+    return {"accion": "creditos"}
+
 if __name__ == '__main__':
     pygame.init()
-    ancho_pantalla = 600
-    alto_pantalla = 600
+    ancho_pantalla = 800
+    alto_pantalla = 700
     pantalla = pygame.display.set_mode((ancho_pantalla, alto_pantalla))
     pygame.display.set_caption("Space Invaders")
     reloj = pygame.time.Clock()
-    fuente = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 16)
-    fuente_grande = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 32)
+    fuente = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 18)
+    fuente_grande = pygame.font.Font(get_resource_path('font/Pixeled.ttf'), 36)
     puntuacion_maxima = cargar_puntuacion_maxima()
-    
-    # Variables de estado del juego
     estado_juego = {"accion": "menu", "modo": "individual"}
     juego = None
-
-    # Evento para los disparos aliens
     DISPARO_ALIEN = pygame.USEREVENT + 1
     pygame.time.set_timer(DISPARO_ALIEN, 800)
-
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -666,25 +759,20 @@ if __name__ == '__main__':
                 sys.exit()
             if evento.type == DISPARO_ALIEN and estado_juego["accion"] == "jugar" and juego:
                 juego.disparo_alien()
-                
-        # Estado: Menú principal
         if estado_juego["accion"] == "menu":
             estado_juego = mostrar_menu()
-            
-            # Si cambiamos a modo juego, inicializar el juego
             if estado_juego["accion"] == "jugar":
                 juego = Juego(modo=estado_juego["modo"])
-        
-        # Estado: Opciones
         elif estado_juego["accion"] == "opciones":
             estado_juego = mostrar_opciones()
-        
-        # Estado: Jugando
+        elif estado_juego["accion"] == "ranking":
+            estado_juego = mostrar_ranking()
+        elif estado_juego["accion"] == "creditos":
+            estado_juego = mostrar_creditos()
         elif estado_juego["accion"] == "jugar":
             pantalla.fill(GRIS_OSCURO)
-            if juego.ejecutar():  # Si mensaje_victoria devuelve True, volver al menú
+            if juego.ejecutar():
                 juego.musica.stop()
                 estado_juego = {"accion": "menu"}
-            
         pygame.display.flip()
         reloj.tick(60)
