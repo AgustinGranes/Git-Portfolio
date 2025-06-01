@@ -6,80 +6,56 @@ import os
 from tkinter import messagebox
 import random
 import pygame
-import sys  # <-- Nueva importación
+import sys
 
-# Obtener el directorio actual del script
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
 sesion = 0
 cuenta = None
 
-
 def get_resource_path(filename):
-    """Obtiene la ruta completa de un archivo de recursos"""
     return os.path.join(current_dir, filename)
-
 
 def iniciar_sesion():
     global sesion
     customtkinter.set_appearance_mode("System")
     customtkinter.set_default_color_theme("green")
-
     app = customtkinter.CTk()
     app.geometry("600x600")
     app.title('Login')
-
     def button_function():
         app.destroy()
         global sesion
         sesion = 1
         iniciar_juego()
-
-    # Cargar la imagen de fondo
     img1 = ImageTk.PhotoImage(Image.open(
         r"Instituto\2024\Taller de Computacion\Proyecto Final\pattern.png"))
     l1 = customtkinter.CTkLabel(master=app, image=img1)
     l1.place(relwidth=1, relheight=1)
-
-    # Crear un frame para el login
     frame = customtkinter.CTkFrame(
         master=l1, width=320, height=450, corner_radius=15, fg_color="white")
     frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-    # Cargar y redimensionar la imagen del logo
     img3 = Image.open(r"Instituto\2024\Taller de Computacion\Proyecto Final\logo.png")
     img3 = img3.resize((150, 150))
     logo_img = ImageTk.PhotoImage(img3)
-
-    # Añadir la imagen del logo a un CTkLabel
     logo_label = customtkinter.CTkLabel(master=frame, image=logo_img, text="")
     logo_label.place(relx=0.5, y=20, anchor=tk.N)
-
-    # Etiqueta de título
     l2 = customtkinter.CTkLabel(master=frame, text="Log in/Register Your Account",
                                 font=("Helvetica", 22), text_color="black")
     l2.place(relx=0.5, y=200, anchor=tk.CENTER)
-
     entry1 = customtkinter.CTkEntry(
         master=frame, width=220, placeholder_text='Username')
     entry1.place(relx=0.5, y=250, anchor=tk.CENTER)
-
     entry2 = customtkinter.CTkEntry(
         master=frame, width=220, placeholder_text='Password', show="*")
     entry2.place(relx=0.5, y=300, anchor=tk.CENTER)
-
     def login_function():
         username = entry1.get()
         password = entry2.get()
-
-        # Leer el archivo JSON
         try:
             with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
-
-        # Verificar el usuario en el archivo JSON
         user_found = False
         for user in data['users']:
             if user['username'] == username and user['password'] == password:
@@ -88,60 +64,42 @@ def iniciar_sesion():
                 user_found = True
                 button_function()
                 break
-
         if not user_found:
             messagebox.showerror(
                 "Error", "Usuario o contraseña incorrectos (POSIBLE NECESIDAD DE REGISTRO)")
-
     def register_function():
         username = entry1.get()
         password = entry2.get()
-
         if len(username) < 5 or len(password) < 5:
             messagebox.showerror(
                 "Error", "El nombre de usuario y la contraseña deben tener al menos 5 caracteres")
             return
-
-        # Leer el archivo JSON
         try:
             with open(get_resource_path('users.json'), 'r') as f:
                 data = json.load(f)
         except FileNotFoundError:
             data = {'users': []}
-
-        # Verificar si el usuario ya existe
         for user in data['users']:
             if user['username'] == username:
                 messagebox.showerror("Error", "El nombre de usuario ya existe")
                 return
-
-        # Agregar el nuevo usuario al archivo JSON
         data['users'].append(
             {"username": username, "password": password, "monedas": 0, "puntos": 0})
-
-        # Guardar el archivo JSON actualizado
         with open(get_resource_path('users.json'), 'w') as f:
             json.dump(data, f, indent=4)
-
         messagebox.showinfo(
             "Éxito", f"Usuario {username} registrado exitosamente!")
         button_function()
-
     button1 = customtkinter.CTkButton(
         master=frame, width=220, text="Login", command=login_function, corner_radius=6)
     button1.place(relx=0.5, y=350, anchor=tk.CENTER)
-
     button2 = customtkinter.CTkButton(
         master=frame, width=220, text="Register", command=register_function, corner_radius=6)
     button2.place(relx=0.5, y=400, anchor=tk.CENTER)
-
     app.mainloop()
-
 
 def iniciar_juego():
     global cuenta, puntaje
-
-    # Configuración de pygame para manejar la música
     try:
         pygame.mixer.init()
         pygame.mixer.music.load(get_resource_path("musica.mp3"))
@@ -150,8 +108,6 @@ def iniciar_juego():
     except pygame.error as e:
         print(f"Error al cargar la música: {e}")
         messagebox.showwarning("Advertencia", "No se pudo cargar la música del juego")
-
-    # Lista de Cultura
     preguntas = [
         {"pregunta": "¿Cuál es el club con más títulos de la Liga de Campeones de la UEFA?",
          "opciones": ["Real Madrid", "Barcelona", "Manchester United", "AC Milan"],
@@ -391,7 +347,6 @@ def iniciar_juego():
         {"pregunta": "¿Qué famoso músico argentino es conocido por su banda 'Los Fabulosos Cadillacs'?", "opciones": [
             "Charly García", "Luis Alberto Spinetta", "Vicentico", "Fito Páez"], "respuesta": "Vicentico"}
     ]
-
     def cargar_monedas():
         global monedas
         try:
@@ -407,9 +362,7 @@ def iniciar_juego():
                 json.dump(data, f, indent=4)
             monedas = 0
         return monedas
-
     monedas = cargar_monedas()
-
     def guardar_monedas():
         global cuenta, monedas
         try:
@@ -432,7 +385,6 @@ def iniciar_juego():
             })
         with open(get_resource_path('users.json'), 'w') as f:
             json.dump(data, f, indent=4)
-
     class JuegoApp:
         def __init__(self, root):
             self.root = root
@@ -441,21 +393,14 @@ def iniciar_juego():
             self.root.configure(bg="#18181b")
             self.root.grid_rowconfigure(0, weight=1)
             self.root.grid_columnconfigure(0, weight=1)
-
-            # Fondo de pantalla con transparencia
             self.background_image = tk.PhotoImage(file=get_resource_path("fondo.png"))
             self.background_label = tk.Label(root, image=self.background_image, bg="#18181b")
             self.background_label.place(relwidth=1, relheight=1)
-
             self.preguntas_resueltas = 0
             self.puntos = 0
             self.monedas = monedas
-
-            # Menú principal minimalista
             self.menu = tk.Frame(root, bg="#222226", bd=0, highlightthickness=0)
             self.menu.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-
-            # Monedas arriba derecha
             self.monedas_frame = tk.Frame(root, bg="#222226", bd=0)
             self.monedas_frame.place(relx=0.98, rely=0.05, anchor="ne")
             self.moneda_image = tk.PhotoImage(file=get_resource_path("moneda.png")).subsample(30)
@@ -463,13 +408,9 @@ def iniciar_juego():
             self.moneda_label.pack(side="left")
             self.monedas_text_label = tk.Label(self.monedas_frame, text=f"{self.monedas}", font=("Inter", 22, "bold"), fg="#facc15", bg="#222226")
             self.monedas_text_label.pack(side="left", padx=(5,0))
-
-            # Logo centrado
             self.logo = tk.PhotoImage(file=get_resource_path("logo.png")).subsample(2)
             self.logo_label = tk.Label(self.menu, image=self.logo, bg="#222226")
             self.logo_label.grid(row=0, column=0, pady=(0, 10), columnspan=2)
-
-            # Opciones de menú
             self.menu_options = [
                 ("Jugar", self.iniciar_juego),
                 ("Ranking", self.mostrar_ranking),
@@ -492,8 +433,6 @@ def iniciar_juego():
                 btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#3f3f46", fg="#facc15"))
                 btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#27272a", fg="#fafafa"))
                 self.menu_buttons.append(btn)
-
-            # Centrar el menú
             self.menu.grid_rowconfigure(tuple(range(len(self.menu_options)+1)), weight=1)
             self.menu.grid_columnconfigure(0, weight=1)
 
@@ -554,14 +493,12 @@ def iniciar_juego():
             self.ranking_frame = tk.Frame(self.root, bg="#222226", bd=0)
             self.ranking_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, relwidth=0.7, relheight=0.8)
             tk.Label(self.ranking_frame, text="Ranking de Monedas", font=("Inter", 24, "bold"), fg="#fafafa", bg="#222226").pack(pady=(20, 10))
-            # Cargar datos del archivo JSON
             try:
                 with open(get_resource_path('users.json'), 'r') as f:
                     data = json.load(f)
             except FileNotFoundError:
                 data = {'users': []}
             usuarios_ordenados = sorted(data['users'], key=lambda x: x['monedas'], reverse=True)
-            # Tabla ranking
             table_frame = tk.Frame(self.ranking_frame, bg="#18181b", bd=0)
             table_frame.pack(pady=10, fill="both", expand=True)
             headers = ["Puesto", "Usuario", "Monedas"]
@@ -693,9 +630,6 @@ def iniciar_juego():
     root = tk.Tk()
     app = JuegoApp(root)
     root.mainloop()
-
-
-# Al iniciar el programa, se verifica el estado de la sesión
 if sesion == 0:
     iniciar_sesion()
 else:
